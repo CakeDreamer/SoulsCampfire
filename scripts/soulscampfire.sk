@@ -1,0 +1,70 @@
+# REQUIREMENTS: SKBee
+# tested on SKBee v1.16.3
+
+on join:
+    send "Hello %player%, soulsCampfire skript loaded" to event-player
+    set metadata value "soulsCampfire.hasSitDown" of player to false
+    
+on rightclick on a campfire:
+    if event-player is on ground:
+        
+        
+        set {_asnbt} to nbt compound from "{NoGravity:1,Invisible:1}"
+        spawn a armor stand 1.7 meter below event-player with nbt {_asnbt}
+        set {_as} to last spawned armor stand
+        set name of last spawned armor stand to "soulsCampfire.seat"
+        wait 1 tick
+        # spawn 1 armor stand 2 meters below the player
+        make player ride last spawned armor stand
+        set metadata value "soulsCampfire.hasSitDown" of player to true
+        wait 1 tick
+
+        send title "&6BONFIRE LIT" to player for 5 seconds with fadein 1 second and fade out 1 second
+        send "Spawnpoint Set." to event-player
+
+function killSoulsCampfireSeats(p:player, r:integer): # 玩家起身的时候，杀死玩家半径r内的soulsCampfire.seat。可能有更好的实现方法
+    loop all entities in radius {_r} around {_p}:
+        if name of loop-entity is "soulsCampfire.seat":
+            kill loop-entity
+
+function standUpFromCampfire(p:player, intended: boolean):
+    if metadata value "soulsCampfire.hasSitDown" of {_p} is true:
+        set metadata value "soulsCampfire.hasSitDown" of {_p} to false
+        killSoulsCampfireSeats({_p}, 2)
+        if {_intended} is true:
+            send "Good luck on your adventures!" to {_p}
+
+on sneak toggle:
+    standUpFromCampfire(player, true)
+
+on shoot:
+    if projectile is an ender pearl:
+        standUpFromCampfire(shooter, true)
+
+# when player leaves accidentally
+on death of player:
+    standUpFromCampfire(victim, false)
+
+on disconnect:
+    standUpFromCampfire(player, false)
+
+# every 5 seconds:
+#     kill all armor stands with name "soulsCampfire.seat"
+
+
+# https://forums.skunity.com/threads/make-player-sit-on-stairs.3333/
+# on rightclick on any stairs:
+#     spawn armor stand at location below event-block
+#     set {_entity} to last spawned entity
+#     # set is visible of {_entity} to false
+#     make player ride {_entity}
+#     while {_entity} exists:
+#         if player is sneaking:
+#             eject any passenger of {_entity}
+#             wait 2 ticks
+#             delete {_entity}
+#         wait 5 tick
+# on vehicle exit:
+#     if player is riding a armor stnad:
+#         set {soulsCampfire.hasSitDown} to false
+#         kill spawned armor stand
